@@ -26,10 +26,17 @@ export const roomHandler = (socket) => {
           roomId,
           participants: rooms[roomId],
         });
+                  // message listener 
+                  socket.on('message', message => {
+                    console.log('message received', message);
+                     socket.to(roomId).emit('createMessage', message);
+                  })
       }
       else{
         console.log("ifconditionisfalsse");
       }
+
+
       // if the user leaves the meet
       socket.on("disconnect", () => {
         console.log("user left the room", peerId);
@@ -51,5 +58,6 @@ export const roomHandler = (socket) => {
     }
     socket.on("create-room", createRoom);
     socket.on("join-room", joinRoom);
+
     socket.on("someone-trying-to-join-room", validateRoomId);
   };
