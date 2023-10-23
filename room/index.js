@@ -38,6 +38,10 @@ export const roomHandler = (socket) => {
 
 
       // if the user leaves the meet
+      socket.on("user-leaves", ()=>{
+        console.log("user left the room", peerId);
+        leaveRoom({ roomId, peerId });
+      })
       socket.on("disconnect", () => {
         console.log("user left the room", peerId);
         leaveRoom({ roomId, peerId });
