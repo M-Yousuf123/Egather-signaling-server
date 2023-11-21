@@ -60,8 +60,15 @@ export const roomHandler = (socket) => {
           socket.emit("invalid-roomId");
          }
     }
+    const startSharing = ({peerId, roomId})=>{
+      socket.to(roomId).emit("user-started-sharing", peerId);
+    }
+    const stopSharing = (roomId)=>{
+       socket.to(roomId).emit("user-stopped-sharing");
+    }
     socket.on("create-room", createRoom);
     socket.on("join-room", joinRoom);
-
     socket.on("someone-trying-to-join-room", validateRoomId);
+    socket.on('start-sharing', startSharing);
+    socket.on('stop-sharing', stopSharing);
   };
