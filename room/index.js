@@ -32,9 +32,9 @@ export const roomHandler = (socket) => {
           participants: rooms[roomId],
         });
                   // message listener 
-                  socket.on('message', message => {
-                    console.log('message received', message);
-                     socket.to(roomId).emit('createMessage', message);
+                  socket.on('message', ({userName, message}) => {
+                    console.log('message received', userName);
+                     socket.to(roomId).emit('createMessage', {userName, message});
                   })
       }
       else{
