@@ -3,42 +3,44 @@ import { v4 as uuidv4 } from "uuid";
 
 const rooms = {};
 export const roomHandler = (socket) => {
-  const createRoom = ({ name }) => {
-    const roomId = uuidv4();
-    rooms[roomId] = [];
-    console.log("thisi is name", name);
-    socket.emit("enter-room", { name, roomId });
-    console.log("User created the room");
-  };
-  const joinRoom = ({ roomId, peerId, name }) => {
-    console.log(roomId);
-    console.log(rooms);
-    if (roomId in rooms) {
-      console.log("iaminsideif");
-      socket.join(roomId);
-      rooms[roomId].push({ name, peerId }); // storing the ids' of the paricipants which are joining
-      console.log("User joined the room, his/her id:", roomId, peerId);
+    const createRoom = ({name}) => {
+      const roomId = uuidv4();
+      rooms[roomId] = [];
+      console.log("thisi is name", name);
+      socket.emit("enter-room", { name, roomId });
+      console.log("User created the room");
+    };
+    const joinRoom = ({ roomId, peerId , name}) => {
+      console.log(roomId);
+      console.log(rooms);
+      if (roomId in rooms) {
+        console.log("iaminsideif")
+        socket.join(roomId);
+        rooms[roomId].push({name, peerId}); // storing the ids' of the paricipants which are joining
+        console.log("User joined the room, his/her id:", roomId, peerId);
+  
+        // for sending user-joined event to every participants and his/her id (of new user who joined)
+        socket.to(roomId).emit("user-joined", { peerId });
+  
+        // for showing the list of joined paricipants to everyone in the room
+        socket.emit("get-users", {
+          roomId,
+          participants: rooms[roomId],
+        });
+        socket.to(roomId).emit("get-users", {
+          roomId,
+          participants: rooms[roomId],
+        });
+                  // message listener 
+                  socket.on('message', ({userName, message}) => {
+                    console.log('message received', userName);
+                     socket.to(roomId).emit('createMessage', {userName, message});
+                  })
+      }
+      else{
+        console.log("ifconditionisfalsse");
+      }
 
-      // for sending user-joined event to every participants and his/her id (of new user who joined)
-      socket.to(roomId).emit("user-joined", { peerId });
-
-      // for showing the list of joined paricipants to everyone in the room
-      socket.emit("get-users", {
-        roomId,
-        participants: rooms[roomId],
-      });
-      socket.to(roomId).emit("get-users", {
-        roomId,
-        participants: rooms[roomId],
-      });
-      // message listener
-      socket.on("message", (message) => {
-        console.log("message received", message);
-        socket.to(roomId).emit("createMessage", message);
-      });
-    } else {
-      console.log("ifconditionisfalsse");
-    }
 
     // if the user leaves the meet
     socket.on("user-leaves", () => {
