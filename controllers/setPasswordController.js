@@ -84,15 +84,12 @@ export const sendingOtp = async (req, res) => {
 
     await session.commitTransaction();
     session.endSession();
-
-    return res.status(200).json("OTP sent to your registered email id");
+    return res.status(200).json({success:true});
   } catch (err) {
     console.error(err);
     await session.abortTransaction();
     session.endSession();
-    return res.status(500).json({
-      error: `Cannot send OTP now, try again later ): ${err.message}`,
-    });
+    return res.status(500).json({success:false});
   }
 };
 
@@ -150,14 +147,12 @@ export const matchOtpUpdate = async (req, res) => {
 
     await session.commitTransaction();
     session.endSession();
-
-    return res.status(200).json({ message: "Password updated successfully!" });
+    // User registered succesfully
+    return res.status(200).json({success:true});
   } catch (err) {
     console.error(err);
     await session.abortTransaction();
     session.endSession();
-    return res.status(500).json({
-      error: `Cannot update the password: ${err.message}`,
-    });
+    return res.status(500).json({success:false});
   }
 };
