@@ -1,7 +1,7 @@
 import { Socket } from "socket.io";
 import { v4 as uuidv4 } from "uuid";
 
- const rooms = {};
+const rooms = {};
 export const roomHandler = (socket) => {
     const createRoom = ({name}) => {
       const roomId = uuidv4();
@@ -42,47 +42,46 @@ export const roomHandler = (socket) => {
       }
 
 
-      // if the user leaves the meet
-      socket.on("user-leaves", ()=>{
-        console.log("user left the room", peerId);
-        leaveRoom({ roomId, peerId });
-      })
-      socket.on("disconnect", () => {
-        console.log("user left the room", peerId);
-        leaveRoom({ roomId, peerId });
-      });
-    };
-    const leaveRoom = ({ roomId, peerId }) => {
-      rooms[roomId] = rooms[roomId].filter((user) => user.peerId !== peerId);
-      socket.emit("get-users", {
-        roomId,
-        participants: rooms[roomId],
-      });
-      socket.to(roomId).emit("get-users", {
-        roomId,
-        participants: rooms[roomId],
-      });
-
-      socket.to(roomId).emit("user-disconnected", peerId);
-    };
-    const validateRoomId = ({name, roomId})=>{
-      console.log(rooms);
-         if(rooms[roomId]){
-          socket.emit("enter-room", {name, roomId });
-         }
-         else{
-          socket.emit("invalid-roomId");
-         }
-    }
-    const startSharing = ({peerId, roomId})=>{
-      socket.to(roomId).emit("user-started-sharing", peerId);
-    }
-    const stopSharing = (roomId)=>{
-       socket.to(roomId).emit("user-stopped-sharing");
-    }
-    socket.on("create-room", createRoom);
-    socket.on("join-room", joinRoom);
-    socket.on("someone-trying-to-join-room", validateRoomId);
-    socket.on('start-sharing', startSharing);
-    socket.on('stop-sharing', stopSharing);
+    // if the user leaves the meet
+    socket.on("user-leaves", () => {
+      console.log("user left the room", peerId);
+      leaveRoom({ roomId, peerId });
+    });
+    socket.on("disconnect", () => {
+      console.log("user left the room", peerId);
+      leaveRoom({ roomId, peerId });
+    });
   };
+  const leaveRoom = ({ roomId, peerId }) => {
+    rooms[roomId] = rooms[roomId].filter((user) => user.peerId !== peerId);
+    socket.emit("get-users", {
+      roomId,
+      participants: rooms[roomId],
+    });
+    socket.to(roomId).emit("get-users", {
+      roomId,
+      participants: rooms[roomId],
+    });
+
+    socket.to(roomId).emit("user-disconnected", peerId);
+  };
+  const validateRoomId = ({ name, roomId }) => {
+    console.log(rooms);
+    if (rooms[roomId]) {
+      socket.emit("enter-room", { name, roomId });
+    } else {
+      socket.emit("invalid-roomId");
+    }
+  };
+  const startSharing = ({ peerId, roomId }) => {
+    socket.to(roomId).emit("user-started-sharing", peerId);
+  };
+  const stopSharing = (roomId) => {
+    socket.to(roomId).emit("user-stopped-sharing");
+  };
+  socket.on("create-room", createRoom);
+  socket.on("join-room", joinRoom);
+  socket.on("someone-trying-to-join-room", validateRoomId);
+  socket.on("start-sharing", startSharing);
+  socket.on("stop-sharing", stopSharing);
+};
