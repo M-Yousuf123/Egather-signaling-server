@@ -1,9 +1,13 @@
 import bcrypt from "bcryptjs";
 import mongoose from "mongoose";
 import randomString from "randomstring";
-import mailer from "../services/mailer.js";
 import User from "../models/User.js";
 import UserPassword from "../models/UserPassword.js";
+import formData from "form-data";
+import Mailgun from "mailgun.js";
+import dotenv from "dotenv";
+
+dotenv.config();
 
 const generateOtp = (len) => {
   const otp = randomString.generate({
@@ -14,15 +18,22 @@ const generateOtp = (len) => {
 };
 
 const sendOtpEmail = async (otp, recipientEmail) => {
-  const msg = {
+  const messageData = {
+    from: "yousufulabrarkhan@gmail.com",
     to: recipientEmail,
-    from: "gj9678@myamu.ac.in",
-    subject: "OTP verification for Password update",
+    subject: "Hello! Your OTP",
     text: `Your OTP for verification is ${otp}`,
   };
+
+  const mailgun = new Mailgun(formData);
+  const client = mailgun.client({
+    username: "MOHD YOUSUF KHAN",
+    key: process.env.MAILGUN_API_KEY,
+  });
+
   try {
-    const mail = await mailer(msg);
-    console.log("successful");
+    const res = await client.messages.create(process.env.DOMAIN, messageData);
+    console.log(res);
     return true;
   } catch (err) {
     console.error(err);
@@ -47,18 +58,17 @@ export const sendingOtp = async (req, res) => {
       throw new Error("User not found.");
     }
 
-    const prevOtps = await UserPassword.find({ userEmail: email }).select(
-      "otp"
-    );
+    const prevOtps = await UserPassword.find({ email: email }).select("otp");
 
     if (prevOtps.length !== 0) {
-      await UserPassword.deleteMany({ userEmail: email });
+      await UserPassword.deleteOne({ email: email });
     }
 
     const otp = generateOtp(6);
     const recipientEmail = email;
     const otpHash = await generateHashedOtp(otp);
-    const otpExpiryTime = new Date(Date.now() + 10 * 60 * 1000);
+    let currentTime = new Date().getTime();
+    let otpExpiryTime = new Date(currentTime + 10 * 60 * 1000);
 
     console.log(otp);
     console.log(recipientEmail);
@@ -93,13 +103,15 @@ export const sendingOtp = async (req, res) => {
   }
 };
 
-const verifyOtp = async (otp, expirationTime, enteredOtp) => {
-  const currentTime = new Date().getTime();
+// ****************************Verifying OTP*************************************
+
+const verifyOtp = async (storedOtpHash, expirationTime, enteredOtp) => {
+  let currentTime = new Date().getTime();
 
   if (currentTime > expirationTime) {
     throw new Error("OTP has expired.");
   } else {
-    const isOtpCorrect = await bcrypt.compare(enteredOtp, otp);
+    const isOtpCorrect = await bcrypt.compare(enteredOtp, storedOtpHash);
 
     if (!isOtpCorrect) {
       throw new Error("Incorrect OTP. Please enter the correct OTP.");
@@ -143,7 +155,7 @@ export const matchOtpUpdate = async (req, res) => {
       { session }
     );
 
-    await UserPassword.deleteMany({ userEmail: email }, { session });
+    await UserPassword.deleteOne({ email: email }, { session });
 
     await session.commitTransaction();
     session.endSession();
